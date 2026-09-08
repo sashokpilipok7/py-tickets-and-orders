@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import  AbstractUser
 
 
 class Genre(models.Model):
@@ -17,13 +18,16 @@ class Actor(models.Model):
 
 
 class Movie(models.Model):
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255,)
     description = models.TextField()
     actors = models.ManyToManyField(to=Actor, related_name="movies")
     genres = models.ManyToManyField(to=Genre, related_name="movies")
 
     def __str__(self) -> str:
         return self.title
+
+    class Meta:
+        indexes = [models.Index(fields=["title"])]
 
 
 class CinemaHall(models.Model):
@@ -50,3 +54,17 @@ class MovieSession(models.Model):
 
     def __str__(self) -> str:
         return f"{self.movie.title} {str(self.show_time)}"
+
+class User(AbstractUser):
+    pass
+
+class Order(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+
+class Ticket(models.Model):
+    row = models.IntegerField()
+    seat = models.IntegerField()
+
+    order = models.ForeignKey(to=Order, on_delete=models.CASCADE)
+    movie_session = models.ForeignKey(to=MovieSession, on_delete=models.CASCADE)
