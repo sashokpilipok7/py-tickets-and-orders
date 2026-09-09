@@ -1,3 +1,6 @@
+from xml.dom import ValidationErr
+
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import  AbstractUser
 
@@ -68,3 +71,17 @@ class Ticket(models.Model):
 
     order = models.ForeignKey(to=Order, on_delete=models.CASCADE)
     movie_session = models.ForeignKey(to=MovieSession, on_delete=models.CASCADE)
+
+    def clean(self):
+        hall = self.movie_session.cinema_hall
+        if hall.rows < self.row:
+            raise ValidationError({"row": f"row number must be in available range: (1, rows): (1, {hall.rows})"})
+        elif hall.seats_in_row < self.seat:
+            raise ValidationError({"seat" : f"seat number must be in available range: (1, seats_in_row): (1, {hall.seats_in_row})"})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["row", "seat", "movie_session"], name="unique_row_seat_session")]
