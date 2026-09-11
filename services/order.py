@@ -1,26 +1,41 @@
 from typing import List
 from datetime import datetime
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models.query import QuerySet
 
-from db.models import Order, Ticket, User
+from db.models import Order, Ticket, MovieSession
 
-
-def create_order(tickets: List[Ticket], username: str, date: datetime ) -> Order:
-    order = Order.objects.create(created_at=date, user__username=username)
-
-    for ticket in tickets:
-        created_ticket = Ticket.objects.create(ticket=ticket, order=order)
-        created_ticket.order = order
-        created_ticket.created_at = date
-        created_ticket.save()
-    return order
 
 @transaction.atomic
-def get_orders(username: str = '') -> QuerySet[Order]:
-    try:
-        orders = Order.objects.filter(user__username=username)
+def create_order(
+        tickets: List[Ticket],
+        username: str,
+        date: datetime = None) -> Order:
+    user = get_user_model().objects.get(username=username)
+    order = Order.objects.create(created_at=date, user=user)
+    if date:
+        order.created_at = date
+
+    order.save()
+    for ticket in tickets:
+        m_session = MovieSession.objects.get(
+            id=ticket.get("movie_session")
+        )
+        Ticket.objects.create(
+            row=ticket["row"],
+            seat=ticket["seat"],
+            movie_session=m_session,
+            order=order
+        )
+    return order
+
+
+def get_orders(username: str = "") -> QuerySet[Order]:
+    if username:
+        user = get_user_model().objects.get(username=username)
+        orders = Order.objects.filter(user=user)
         return orders
-    except User.DoesNotExist:
+    else:
         return Order.objects.all()
