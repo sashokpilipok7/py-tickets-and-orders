@@ -34,7 +34,6 @@ def create_movie(
     genres_ids: list = None,
     actors_ids: list = None,
 ) -> Movie:
-    try:
         movie = Movie.objects.create(
             title=movie_title,
             description=movie_description,
@@ -44,7 +43,5 @@ def create_movie(
         if actors_ids:
             movie.actors.set(actors_ids)
         return movie
-    except IntegrityError:
-        print('Integrity Error')
 
 
