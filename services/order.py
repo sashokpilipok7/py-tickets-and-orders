@@ -17,8 +17,8 @@ def create_order(
     order = Order.objects.create(created_at=date, user=user)
     if date:
         order.created_at = date
+        order.save()
 
-    order.save()
     for ticket in tickets:
         m_session = MovieSession.objects.get(
             id=ticket.get("movie_session")
